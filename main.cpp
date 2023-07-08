@@ -4,7 +4,8 @@
 #include <mutex>
 #include <thread>
 #include <chrono>
-
+#include <termios.h>
+#include <unistd.h>
 using namespace std;
 
 mutex mtx;
@@ -171,11 +172,11 @@ void inputthread()
         }
         else{
             printf("错误指令,请输入正确指令。例如: \n");
-            printf("addtask:添加任务  ");
-            printf("showtask:显示任务  ");
-            printf("deltask:删除任务  ");
-            printf("changetask:修改任务  ");
-            printf("quit:退出程序\n");
+            printf("1.addtask:添加任务  ");
+            printf("2.showtask:显示任务  ");
+            printf("3.deltask:删除任务  ");
+            printf("4.changetask:修改任务  ");
+            printf("5.quit:退出程序\n");
         }
     }
 }
@@ -183,7 +184,7 @@ void inputthread()
 void checkthread()
 {
     while(!stop) {
-       this_thread::sleep_for(chrono::seconds(5));
+       this_thread::sleep_for(chrono::seconds(2));
        mtx.lock();
        bool flag = guest.checktask();
        mtx.unlock();
@@ -222,15 +223,24 @@ int main(int argc, char* argv[]){
     //登录
     string user_name;
     string psw;
+    string psw_1;
     USERS user;
+
+
     
     while(1){
         cout << "请输入用户名" << endl;
         cin >> user_name;
-        cout << "请输入密码" << endl;
-        cin >> psw;
+
     
         if(user.find_user(user_name)){
+            struct termios old, new_;
+            tcgetattr(STDIN_FILENO, &old);   
+            new_ = old;
+            new_.c_lflag &= ~ECHO;            
+            tcsetattr(STDIN_FILENO, TCSANOW, &new_);
+            psw = getpass("请输入密码: ");
+            tcsetattr(STDIN_FILENO, TCSANOW, &old);
             int check = user.check_psw(user_name, psw);
             if(check == -1){
                 cout << "密码错误，请重试" <<endl;
@@ -243,10 +253,29 @@ int main(int argc, char* argv[]){
             }
         }
         else{
-            cout << "用户不存在，已为您创建一个新用户" <<endl;
-            user.create_user(user_name, psw);
-            GUEST guest(user_name);
-            break;
+            struct termios old, new_;
+            cout << "用户不存在，将为您创建一个新用户" <<endl;
+            tcgetattr(STDIN_FILENO, &old);   
+            new_ = old;
+            new_.c_lflag &= ~ECHO;            
+            tcsetattr(STDIN_FILENO, TCSANOW, &new_);
+            psw = getpass("请设置密码: ");
+            tcsetattr(STDIN_FILENO, TCSANOW, &old);
+            
+            tcgetattr(STDIN_FILENO, &old);   
+            new_ = old;
+            new_.c_lflag &= ~ECHO;            
+            tcsetattr(STDIN_FILENO, TCSANOW, &new_);
+            psw_1 = getpass("请再次输入密码: ");
+            tcsetattr(STDIN_FILENO, TCSANOW, &old);
+            if (psw == psw_1)
+            {
+            	user.create_user(user_name, psw);
+            	GUEST guest(user_name);
+            	break;
+            }
+            else cout << "两次密码不相同,请重试" <<endl;
+            
         }
 
     }
