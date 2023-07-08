@@ -556,4 +556,3 @@ bool GUEST::checktask()
     }
     return changed;
 }
-
