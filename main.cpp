@@ -231,7 +231,7 @@ int main(int argc, char* argv[]){
     while(1){
         cout << "请输入用户名" << endl;
         cin >> user_name;
-
+        if(user_name.length() == 0) {cout << "用户名不能为空，请重试"<<endl; continue;}
     
         if(user.find_user(user_name)){
             struct termios old, new_;
@@ -254,12 +254,16 @@ int main(int argc, char* argv[]){
         }
         else{
             struct termios old, new_;
-            cout << "用户不存在，将为您创建一个新用户" <<endl;
+            cout << "用户不存在，将为您创建一个新用户，输入1继续，如果您输错了用户名，请输入r返回:" <<endl;
+            string temp;
+            cin >> temp;
+            if(temp == "r") continue;
             tcgetattr(STDIN_FILENO, &old);   
             new_ = old;
             new_.c_lflag &= ~ECHO;            
             tcsetattr(STDIN_FILENO, TCSANOW, &new_);
             psw = getpass("请设置密码: ");
+            if(psw.length() == 0) {cout << "密码不能为空，请重试"<<endl; continue;}
             tcsetattr(STDIN_FILENO, TCSANOW, &old);
             
             tcgetattr(STDIN_FILENO, &old);   
